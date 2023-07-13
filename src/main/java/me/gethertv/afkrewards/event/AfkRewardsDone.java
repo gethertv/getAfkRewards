@@ -8,8 +8,8 @@ import org.bukkit.event.HandlerList;
 public class AfkRewardsDone extends Event implements Cancellable {
 
     private static final HandlerList handlerList = new HandlerList();
-    private static Player player;
-    private static boolean cancelled;
+    private Player player;
+    private boolean cancelled;
 
 
     public AfkRewardsDone(Player player) {
@@ -37,7 +37,7 @@ public class AfkRewardsDone extends Event implements Cancellable {
         return handlerList;
     }
 
-    public static Player getPlayer() {
+    public Player getPlayer() {
         return player;
     }
 }
