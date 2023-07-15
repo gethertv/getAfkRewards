@@ -1,7 +1,9 @@
 package me.gethertv.afkrewards;
 
+import dev.gether.getboxsettings.api.IBoxSettingsApi;
 import me.gethertv.afkrewards.cmd.AfkZoneCmd;
 import me.gethertv.afkrewards.data.AfkZone;
+import me.gethertv.afkrewards.data.CmdRewards;
 import me.gethertv.afkrewards.data.Cuboid;
 import me.gethertv.afkrewards.data.User;
 import me.gethertv.afkrewards.event.ConnectPlayer;
@@ -13,6 +15,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -36,6 +39,7 @@ public final class Main extends JavaPlugin {
 
     private static CheckRegion checkRegion;
     private HashMap<UUID, User> userData = new HashMap<>();
+    private IBoxSettingsApi iBoxSettingsApi;
 
     @Override
     public void onEnable() {
@@ -43,11 +47,16 @@ public final class Main extends JavaPlugin {
         instance = this;
         saveDefaultConfig();
 
+        if(Bukkit.getPluginManager().getPlugin("getBoxSettings")!=null)
+        {
+            iBoxSettingsApi = (IBoxSettingsApi) Bukkit.getPluginManager().getPlugin("getBoxSettings");
+        }
+
         afkZoneList = new ArrayList<>();
 
         selector = new ItemStack(Material.STICK);
         ItemMeta itemMeta = selector.getItemMeta();
-        itemMeta.setDisplayName(ColorFixer.addColors("&4&k# &cSelector"));
+        itemMeta.setDisplayName(ColorFixer.addColors("&7&k# &fSelector"));
         selector.setItemMeta(itemMeta);
 
         loadAfkZone();
@@ -65,6 +74,10 @@ public final class Main extends JavaPlugin {
         {
             checkRegion.cancel();
         }
+        for (User value : userData.values()) {
+            value.destroy();
+        }
+        userData.clear();
         Bukkit.getScheduler().cancelTasks(this);
         HandlerList.unregisterAll(this);
         instance = null;
@@ -77,6 +90,11 @@ public final class Main extends JavaPlugin {
         {
             checkRegion.cancel();
         }
+        for (User value : userData.values()) {
+            value.destroy();
+        }
+        userData.clear();
+
         afkZoneList.clear();
         loadAfkZone();
     }
@@ -90,14 +108,30 @@ public final class Main extends JavaPlugin {
         {
             Location first = getConfig().getLocation("afk."+name+".first");
             Location second = getConfig().getLocation("afk."+name+".second");
-            List<String> commands = new ArrayList<>();
-            commands.addAll(getConfig().getStringList("afk."+name+".commands"));
+
+            HashMap<String, Double> chance = new HashMap<>();
+            ConfigurationSection rewardSection =  getConfig().getConfigurationSection("afk."+name+".reward");
+            List<String> cmds = new ArrayList<>(rewardSection.getStringList(".commands"));
+
+            ConfigurationSection permisionsSection = rewardSection.getConfigurationSection(".permissions");
+            for(String perKey : permisionsSection.getKeys(false))
+            {
+                ConfigurationSection permSection = permisionsSection.getConfigurationSection("." + perKey);
+
+                String permission = permSection.getString(".permission");
+                double chanceReward = permSection.getDouble(".chance");
+
+                chance.put(permission, chanceReward);
+            }
+
+
+
             int time = getConfig().getInt("afk."+name+".time");
             Cuboid cuboid = new Cuboid(first, second);
             checkRegion = new CheckRegion(
                     new AfkZone(
                         cuboid,
-                        commands,
+                        new CmdRewards(chance, cmds),
                         time,
                         BarColor.valueOf(getConfig().getString("afk."+name+".p-color").toUpperCase()),
                         BarStyle.valueOf(getConfig().getString("afk."+name+".p-style").toUpperCase()),
@@ -108,6 +142,10 @@ public final class Main extends JavaPlugin {
             afkZoneList.add(checkRegion);
 
         }
+    }
+
+    public IBoxSettingsApi getiBoxSettingsApi() {
+        return iBoxSettingsApi;
     }
 
     public HashMap<UUID, User> getUserData() {

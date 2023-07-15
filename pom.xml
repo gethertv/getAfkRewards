@@ -6,7 +6,7 @@
 
     <groupId>me.gethertv</groupId>
     <artifactId>AfkRewards</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <packaging>jar</packaging>
 
     <name>AfkRewards</name>
@@ -64,6 +64,13 @@
     </repositories>
 
     <dependencies>
+        <dependency>
+            <groupId>dev.gether</groupId>
+            <artifactId>getboxsettings</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/getBoxSettingsAPI.jar</systemPath>
+        </dependency>
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>

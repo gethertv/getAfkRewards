@@ -7,6 +7,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 
 public class InteractionClick implements Listener {
 
@@ -30,6 +31,9 @@ public class InteractionClick implements Listener {
         }
         if(event.getAction()== Action.RIGHT_CLICK_BLOCK)
         {
+            if(event.getHand()== EquipmentSlot.OFF_HAND)
+                return;
+
             Main.setSecond(event.getClickedBlock().getLocation());
             event.setCancelled(true);
             player.sendMessage(ColorFixer.addColors("&aPomyslnie ustawionio druga lokalizacje"));

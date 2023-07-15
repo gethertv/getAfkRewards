@@ -13,10 +13,10 @@ styles:
   no-active: "&7"
   active: "&a"
 
-sec: "{sec} s"
-min: "{min} m!"
-hour: "{hour} h"
-day: "{day} d"
+sec: ' {sec}s'
+min: ' {min}m'
+hour: ' {hour}h'
+day: '{day}d'
 
 
 format: "{d}{h}{m}{s}"

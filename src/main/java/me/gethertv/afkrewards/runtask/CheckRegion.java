@@ -1,7 +1,9 @@
 package me.gethertv.afkrewards.runtask;
 
+import dev.gether.getboxsettings.api.IBoxSettingsApi;
 import me.gethertv.afkrewards.Main;
 import me.gethertv.afkrewards.data.AfkZone;
+import me.gethertv.afkrewards.data.CmdRewards;
 import me.gethertv.afkrewards.data.User;
 import me.gethertv.afkrewards.event.AfkRewardsDone;
 import me.gethertv.afkrewards.utils.ColorFixer;
@@ -16,6 +18,8 @@ import org.checkerframework.checker.units.qual.A;
 import java.awt.*;
 import java.text.DecimalFormat;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 
 public class CheckRegion extends BukkitRunnable {
@@ -36,8 +40,14 @@ public class CheckRegion extends BukkitRunnable {
 
         for(Player player : Bukkit.getOnlinePlayers())
         {
+
             if(!afkZone.getCuboid().contains(player.getLocation()))
             {
+                IBoxSettingsApi iBoxSettingsApi = Main.getInstance().getiBoxSettingsApi();
+                if(iBoxSettingsApi!=null)
+                {
+                    iBoxSettingsApi.enableActionBar(player);
+                }
                 if(userdata.containsKey(player.getUniqueId()))
                     userdata.remove(player.getUniqueId());
 
@@ -51,40 +61,43 @@ public class CheckRegion extends BukkitRunnable {
             }
             if(userdata.get(player.getUniqueId())==null)
             {
+                IBoxSettingsApi iBoxSettingsApi = Main.getInstance().getiBoxSettingsApi();
+                if(iBoxSettingsApi!=null)
+                {
+                    iBoxSettingsApi.disableActionBar(player);
+                }
                 Main.getInstance().getUserData().put(player.getUniqueId(),new User(player, afkZone));
                 userdata.put(player.getUniqueId(), System.currentTimeMillis()+(afkZone.getSecond()*1000));
                 continue;
             }
-
-            if(userdata.get(player.getUniqueId())<= System.currentTimeMillis())
-            {
-
-                AfkRewardsDone afkRewardsDone = new AfkRewardsDone(player);
-                Bukkit.getPluginManager().callEvent(afkRewardsDone);
-                if (!afkRewardsDone.isCancelled()) {
-                    for(String cmd : afkZone.getCommands())
-                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd.replace("{player}", player.getName()));
-
-                    Main.getInstance().getUserData().remove(player.getUniqueId());
-                    userdata.remove(player.getUniqueId());
-                    continue;
-                }
-            }
             String value = getValue(userdata.get(player.getUniqueId()));
-            double valueTemp =  Double.parseDouble(value) *100;
+            double pr = Double.parseDouble(value);
+            double valueTemp =  pr *100;
             String procenty = String.format("%.2f", valueTemp);
 
+            CmdRewards reward = afkZone.getReward();
+            double chance = 0;
+            for (Map.Entry<String, Double> entry : reward.getChance().entrySet()) {
+                String permission = entry.getKey();
+                Double chanceTemp = entry.getValue();
+                if (player.hasPermission(permission)) {
+                    if (chanceTemp > chance)
+                        chance = chanceTemp;
+                }
+            }
             if(Main.getInstance().getConfig().getBoolean("boss-bar"))
             {
                 User user = Main.getInstance().getUserData().get(player.getUniqueId());
                 if(user!=null)
                 {
-                    double progress = (double) System.currentTimeMillis() / user.getFinishSecond();
-                    user.getBossBar().setProgress(progress);
+
+                    user.getBossBar().setProgress((pr > 1) ? 1 : pr);
                     String text = afkZone.getBossName();
                     int second = (int) (user.getFinishSecond() - System.currentTimeMillis()) / 1000;
                     user.getBossBar().setTitle(ColorFixer.addColors(
                             text.replace("{time}", Timer.getTime(second))
+                                    .replace("{percent}", procenty)
+                                    .replace("{chance}", String.format("%.2f", chance))
                     ));
                 }
 
@@ -99,7 +112,38 @@ public class CheckRegion extends BukkitRunnable {
                                 .replace("{time}", getTime(userdata.get(player.getUniqueId())))
                                 .replace("{bar}", getBar(value)
                         ))));
-            continue;
+
+
+            if(userdata.get(player.getUniqueId())<= System.currentTimeMillis())
+            {
+
+                AfkRewardsDone afkRewardsDone = new AfkRewardsDone(player);
+                Bukkit.getPluginManager().callEvent(afkRewardsDone);
+                if (!afkRewardsDone.isCancelled()) {
+                    Random random = new Random();
+                    double min = 0;
+                    double max = 100-chance;
+                    double startWin = min + (max - min) * random.nextDouble();
+                    double finishWin = startWin+chance;
+
+                    double winTicket = random.nextDouble()*100;
+
+                    if(winTicket >= startWin && finishWin >=winTicket)
+                    {
+                        for(String cmd : reward.getCmds())
+                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd.replace("{player}", player.getName()));
+                    }
+
+
+                    User user = Main.getInstance().getUserData().get(player.getUniqueId());
+                    if(user!=null)
+                        user.destroy();
+
+                    Main.getInstance().getUserData().remove(player.getUniqueId());
+                    userdata.remove(player.getUniqueId());
+                    continue;
+                }
+            }
 
         }
     }

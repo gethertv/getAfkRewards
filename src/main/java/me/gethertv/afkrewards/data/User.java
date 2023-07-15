@@ -9,6 +9,8 @@ import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 
+import java.util.Map;
+
 public class User {
 
     private Player player;
@@ -28,11 +30,27 @@ public class User {
     }
 
     private void checkBoostDrop(AfkZone afkZone) {
+        double chance = 0;
+        for (Map.Entry<String, Double> entry : afkZone.getReward().getChance().entrySet()) {
+            String permission = entry.getKey();
+            Double chanceTemp = entry.getValue();
+            if (player.hasPermission(permission)) {
+                if (chanceTemp > chance)
+                    chance = chanceTemp;
+            }
+        }
+
         String text = afkZone.getBossName();
         int second = (int) (this.finishSecond - System.currentTimeMillis()) / 1000;
-        bossBar = Bukkit.createBossBar(ColorFixer.addColors(text.replace("{time}", Timer.getTime(second))),
+        bossBar = Bukkit.createBossBar(ColorFixer.addColors(
+                text.replace("{time}", Timer.getTime(second))
+                        .replace("{percent}", "0.00")
+                        .replace("{chance}", String.format("%.2f", chance))
+                ),
                 afkZone.getBarColor(),
                 afkZone.getBarStyle());
+
+        bossBar.setProgress(0);
 
 
         bossBar.addPlayer(player);

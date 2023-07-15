@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class AfkZoneCmd implements CommandExecutor {
 
@@ -42,13 +43,16 @@ public class AfkZoneCmd implements CommandExecutor {
                     player.sendMessage(ColorFixer.addColors("&cZaznacz bloki!"));
                     return false;
                 }
+
                 Main.getInstance().getConfig().set("afk."+name+".first", Main.getFirst());
                 Main.getInstance().getConfig().set("afk."+name+".second", Main.getSecond());
-                Main.getInstance().getConfig().set("afk."+name+".commands", new ArrayList<>());
+                Main.getInstance().getConfig().set("afk."+name+".reward.commands", Arrays.asList("say {player} test!"));
+                Main.getInstance().getConfig().set("afk."+name+".reward.permissions.1.permission", "afk.vip");
+                Main.getInstance().getConfig().set("afk."+name+".reward.permissions.1.chance", 50);
                 Main.getInstance().getConfig().set("afk."+name+".time", 600);
-                Main.getInstance().getConfig().set("afk."+name+".p-color", "RED");
+                Main.getInstance().getConfig().set("afk."+name+".p-color", "GREEN");
                 Main.getInstance().getConfig().set("afk."+name+".p-style", "SOLID");
-                Main.getInstance().getConfig().set("afk."+name+".bar-name", "&cNagroda za {time}");
+                Main.getInstance().getConfig().set("afk."+name+".bar-name", "&a✦ &7| &fPodstawową nagrodę dostaniesz za: &a{time} &8(&a{percent}%&8) &7| &fszansa: &7{chance}");
                 Main.getInstance().saveConfig();
                 player.sendMessage(ColorFixer.addColors("&aPomyslnie dodano!"));
             }

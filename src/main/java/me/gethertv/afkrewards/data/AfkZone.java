@@ -10,16 +10,16 @@ public class AfkZone {
 
 
     private Cuboid cuboid;
-    private List<String> commands;
+    private CmdRewards reward;
     private int second;
 
     private BarColor barColor;
     private BarStyle barStyle;
     private String bossName;
-    public AfkZone(Cuboid cuboid, List<String> commands, int second, BarColor barColor, BarStyle barStyle, String bossName) {
+    public AfkZone(Cuboid cuboid, CmdRewards reward, int second, BarColor barColor, BarStyle barStyle, String bossName) {
         this.bossName = bossName;
         this.cuboid = cuboid;
-        this.commands = commands;
+        this.reward = reward;
         this.second = second;
         this.barColor = barColor;
         this.barStyle = barStyle;
@@ -41,8 +41,8 @@ public class AfkZone {
         return cuboid;
     }
 
-    public List<String> getCommands() {
-        return commands;
+    public CmdRewards getReward() {
+        return reward;
     }
 
     public int getSecond() {
