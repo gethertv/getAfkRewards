@@ -52,8 +52,8 @@ public class User {
 
         bossBar.setProgress(0);
 
-
-        bossBar.addPlayer(player);
+        if(afkZone.isBossBar())
+            bossBar.addPlayer(player);
     }
 
 

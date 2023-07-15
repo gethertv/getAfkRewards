@@ -21,10 +21,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public final class Main extends JavaPlugin {
 
@@ -38,7 +35,7 @@ public final class Main extends JavaPlugin {
 
 
     private static CheckRegion checkRegion;
-    private HashMap<UUID, User> userData = new HashMap<>();
+    private HashMap<String, List<User>> userData = new HashMap<>();
     private IBoxSettingsApi iBoxSettingsApi;
 
     @Override
@@ -74,8 +71,12 @@ public final class Main extends JavaPlugin {
         {
             checkRegion.cancel();
         }
-        for (User value : userData.values()) {
-            value.destroy();
+        Collection<List<User>> values = userData.values();
+        for (List<User> zone : values) {
+            for (User user : zone)
+            {
+                user.destroy();
+            }
         }
         userData.clear();
         Bukkit.getScheduler().cancelTasks(this);
@@ -86,15 +87,20 @@ public final class Main extends JavaPlugin {
     public void reloadMainPlugin()
     {
         reloadConfig();
+
         for(CheckRegion checkRegion : afkZoneList)
         {
             checkRegion.cancel();
         }
-        for (User value : userData.values()) {
-            value.destroy();
+        Collection<List<User>> values = userData.values();
+        for (List<User> zone : values) {
+            for (User user : zone)
+            {
+                user.destroy();
+            }
         }
         userData.clear();
-
+        getUserData().clear();
         afkZoneList.clear();
         loadAfkZone();
     }
@@ -106,6 +112,7 @@ public final class Main extends JavaPlugin {
 
         for(String name : getConfig().getConfigurationSection("afk").getKeys(false))
         {
+            getUserData().put(name, new ArrayList<>());
             Location first = getConfig().getLocation("afk."+name+".first");
             Location second = getConfig().getLocation("afk."+name+".second");
 
@@ -130,15 +137,19 @@ public final class Main extends JavaPlugin {
             Cuboid cuboid = new Cuboid(first, second);
             checkRegion = new CheckRegion(
                     new AfkZone(
+                        name,
                         cuboid,
                         new CmdRewards(chance, cmds),
                         time,
                         BarColor.valueOf(getConfig().getString("afk."+name+".p-color").toUpperCase()),
                         BarStyle.valueOf(getConfig().getString("afk."+name+".p-style").toUpperCase()),
-                        getConfig().getString("afk."+name+".bar-name")
+                        getConfig().getString("afk."+name+".bar-name"),
+                        getConfig().getBoolean("afk."+name+".boss-bar"),
+                        getConfig().getBoolean("afk."+name+".action-bar"),
+                        getConfig().getBoolean("afk."+name+".title")
                     )
             );
-            checkRegion.runTaskTimer(this, 20L, 20L);
+            checkRegion.runTaskTimer(this, 20L*getConfig().getInt("task-time"), 20L*getConfig().getInt("task-time"));
             afkZoneList.add(checkRegion);
 
         }
@@ -148,7 +159,7 @@ public final class Main extends JavaPlugin {
         return iBoxSettingsApi;
     }
 
-    public HashMap<UUID, User> getUserData() {
+    public HashMap<String, List<User>> getUserData() {
         return userData;
     }
 

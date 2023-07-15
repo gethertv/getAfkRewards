@@ -13,14 +13,9 @@ import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.checkerframework.checker.units.qual.A;
 
-import java.awt.*;
 import java.text.DecimalFormat;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 public class CheckRegion extends BukkitRunnable {
 
@@ -51,12 +46,16 @@ public class CheckRegion extends BukkitRunnable {
                 if(userdata.containsKey(player.getUniqueId()))
                     userdata.remove(player.getUniqueId());
 
-                User user = Main.getInstance().getUserData().remove(player.getUniqueId());
-                if(user!=null)
-                {
-                    user.destroy();
-                    Main.getInstance().getUserData().remove(player.getUniqueId());
-                }
+                List<User> users = Main.getInstance().getUserData().get(afkZone.getName());
+                users.removeIf(user -> {
+                    if(user.getPlayer().equals(player))
+                    {
+                        user.destroy();
+                        return true;
+                    }
+                    return false;
+                });
+                //Main.getInstance().getUserData().put(afkZone.getName(), users);
                 continue;
             }
             if(userdata.get(player.getUniqueId())==null)
@@ -66,7 +65,8 @@ public class CheckRegion extends BukkitRunnable {
                 {
                     iBoxSettingsApi.disableActionBar(player);
                 }
-                Main.getInstance().getUserData().put(player.getUniqueId(),new User(player, afkZone));
+                List<User> users = Main.getInstance().getUserData().get(afkZone.getName());
+                users.add(new User(player, afkZone));
                 userdata.put(player.getUniqueId(), System.currentTimeMillis()+(afkZone.getSecond()*1000));
                 continue;
             }
@@ -86,11 +86,12 @@ public class CheckRegion extends BukkitRunnable {
                         chance = chanceTemp;
                 }
             }
-            if(Main.getInstance().getConfig().getBoolean("boss-bar"))
+            if(afkZone.isBossBar())
             {
-                User user = Main.getInstance().getUserData().get(player.getUniqueId());
-                if(user!=null)
-                {
+                List<User> users = Main.getInstance().getUserData().get(afkZone.getName());
+                for (User user : users) {
+                    if (!user.getPlayer().equals(player))
+                        continue;
 
                     user.getBossBar().setProgress((pr > 1) ? 1 : pr);
                     String text = afkZone.getBossName();
@@ -101,13 +102,12 @@ public class CheckRegion extends BukkitRunnable {
                                     .replace("{chance}", String.format("%.2f", chance))
                     ));
                 }
-
             }
 
-            if(Main.getInstance().getConfig().getBoolean("title"))
+            if(afkZone.isTitle())
                 player.sendTitle(ColorFixer.addColors(Main.getInstance().getConfig().getString("lang.title").replace("{value}", procenty)), ColorFixer.addColors(Main.getInstance().getConfig().getString("lang.sub-title").replace("{value}", procenty)), 10, 22, 10);
 
-            if(Main.getInstance().getConfig().getBoolean("actionbar"))
+            if(afkZone.isActionBar())
                 player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(
                         ColorFixer.addColors(Main.getInstance().getConfig().getString("lang.format")
                                 .replace("{time}", getTime(userdata.get(player.getUniqueId())))
@@ -136,10 +136,11 @@ public class CheckRegion extends BukkitRunnable {
                     }
 
 
-                    User user = Main.getInstance().getUserData().get(player.getUniqueId());
-                    if(user!=null)
+                    List<User> users = Main.getInstance().getUserData().get(afkZone.getName());
+                    for (User user : users)
+                    {
                         user.destroy();
-
+                    }
                     Main.getInstance().getUserData().remove(player.getUniqueId());
                     userdata.remove(player.getUniqueId());
                     continue;

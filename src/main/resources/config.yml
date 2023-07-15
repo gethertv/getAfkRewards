@@ -2,6 +2,8 @@
 
 bar-format: "&8[{value}&8]"
 
+task-time: 1
+
 lang:
   format: "&cCzas &f{time} &7 |  {bar}"
   sub-title: "&a{value}%"
@@ -21,7 +23,3 @@ day: '{day}d'
 
 format: "{d}{h}{m}{s}"
 
-
-boss-bar: true
-title: true
-actionbar: true

@@ -1,4 +1,4 @@
-name: getAfkRewards
+name: getAfkZone
 version: '${project.version}'
 main: me.gethertv.afkrewards.Main
 api-version: 1.16

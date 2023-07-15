@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>me.gethertv</groupId>
-    <artifactId>AfkRewards</artifactId>
+    <artifactId>getAfkZone</artifactId>
     <version>1.0.2</version>
     <packaging>jar</packaging>
 
