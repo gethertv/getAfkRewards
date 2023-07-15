@@ -71,6 +71,7 @@ public class CheckRegion extends BukkitRunnable {
                 continue;
             }
             String value = getValue(userdata.get(player.getUniqueId()));
+            value = value.replace(",", ".");
             double pr = Double.parseDouble(value);
             double valueTemp =  pr *100;
             String procenty = String.format("%.2f", valueTemp);
