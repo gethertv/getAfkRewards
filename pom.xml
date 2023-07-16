@@ -6,7 +6,7 @@
 
     <groupId>me.gethertv</groupId>
     <artifactId>getAfkZone</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.4</version>
     <packaging>jar</packaging>
 
     <name>AfkRewards</name>

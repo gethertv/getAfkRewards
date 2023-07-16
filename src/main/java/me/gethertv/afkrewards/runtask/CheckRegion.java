@@ -32,122 +32,151 @@ public class CheckRegion extends BukkitRunnable {
 
     @Override
     public void run() {
+        IBoxSettingsApi iBoxSettingsApi = Main.getInstance().getiBoxSettingsApi();
 
-        for(Player player : Bukkit.getOnlinePlayers())
-        {
-
-            if(!afkZone.getCuboid().contains(player.getLocation()))
-            {
-                IBoxSettingsApi iBoxSettingsApi = Main.getInstance().getiBoxSettingsApi();
-                if(iBoxSettingsApi!=null)
-                {
-                    iBoxSettingsApi.enableActionBar(player);
-                }
-                if(userdata.containsKey(player.getUniqueId()))
-                    userdata.remove(player.getUniqueId());
-
-                List<User> users = Main.getInstance().getUserData().get(afkZone.getName());
-                users.removeIf(user -> {
-                    if(user.getPlayer().equals(player))
-                    {
-                        user.destroy();
-                        return true;
-                    }
-                    return false;
-                });
-                //Main.getInstance().getUserData().put(afkZone.getName(), users);
-                continue;
-            }
-            if(userdata.get(player.getUniqueId())==null)
-            {
-                IBoxSettingsApi iBoxSettingsApi = Main.getInstance().getiBoxSettingsApi();
-                if(iBoxSettingsApi!=null)
-                {
-                    iBoxSettingsApi.disableActionBar(player);
-                }
-                List<User> users = Main.getInstance().getUserData().get(afkZone.getName());
-                users.add(new User(player, afkZone));
-                userdata.put(player.getUniqueId(), System.currentTimeMillis()+(afkZone.getSecond()*1000));
-                continue;
-            }
-            String value = getValue(userdata.get(player.getUniqueId()));
-            value = value.replace(",", ".");
-            double pr = Double.parseDouble(value);
-            double valueTemp =  pr *100;
-            String procenty = String.format("%.2f", valueTemp);
-
-            CmdRewards reward = afkZone.getReward();
-            double chance = 0;
-            for (Map.Entry<String, Double> entry : reward.getChance().entrySet()) {
-                String permission = entry.getKey();
-                Double chanceTemp = entry.getValue();
-                if (player.hasPermission(permission)) {
-                    if (chanceTemp > chance)
-                        chance = chanceTemp;
-                }
-            }
-            if(afkZone.isBossBar())
-            {
-                List<User> users = Main.getInstance().getUserData().get(afkZone.getName());
-                for (User user : users) {
-                    if (!user.getPlayer().equals(player))
-                        continue;
-
-                    user.getBossBar().setProgress((pr > 1) ? 1 : pr);
-                    String text = afkZone.getBossName();
-                    int second = (int) (user.getFinishSecond() - System.currentTimeMillis()) / 1000;
-                    user.getBossBar().setTitle(ColorFixer.addColors(
-                            text.replace("{time}", Timer.getTime(second))
-                                    .replace("{percent}", procenty)
-                                    .replace("{chance}", String.format("%.2f", chance))
-                    ));
-                }
-            }
-
-            if(afkZone.isTitle())
-                player.sendTitle(ColorFixer.addColors(Main.getInstance().getConfig().getString("lang.title").replace("{value}", procenty)), ColorFixer.addColors(Main.getInstance().getConfig().getString("lang.sub-title").replace("{value}", procenty)), 10, 22, 10);
-
-            if(afkZone.isActionBar())
-                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(
-                        ColorFixer.addColors(Main.getInstance().getConfig().getString("lang.format")
-                                .replace("{time}", getTime(userdata.get(player.getUniqueId())))
-                                .replace("{bar}", getBar(value)
-                        ))));
-
-
-            if(userdata.get(player.getUniqueId())<= System.currentTimeMillis())
-            {
-
-                AfkRewardsDone afkRewardsDone = new AfkRewardsDone(player);
-                Bukkit.getPluginManager().callEvent(afkRewardsDone);
-                if (!afkRewardsDone.isCancelled()) {
-                    Random random = new Random();
-                    double min = 0;
-                    double max = 100-chance;
-                    double startWin = min + (max - min) * random.nextDouble();
-                    double finishWin = startWin+chance;
-
-                    double winTicket = random.nextDouble()*100;
-
-                    if(winTicket >= startWin && finishWin >=winTicket)
-                    {
-                        for(String cmd : reward.getCmds())
-                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd.replace("{player}", player.getName()));
-                    }
-
-
-                    List<User> users = Main.getInstance().getUserData().get(afkZone.getName());
-                    for (User user : users)
-                    {
-                        user.destroy();
-                    }
-                    Main.getInstance().getUserData().remove(player.getUniqueId());
-                    userdata.remove(player.getUniqueId());
-                    continue;
-                }
-            }
-
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            handlePlayerActivity(player, iBoxSettingsApi);
         }
+    }
+
+    private void handlePlayerActivity(Player player, IBoxSettingsApi iBoxSettingsApi) {
+        if (!afkZone.getCuboid().contains(player.getLocation())) {
+            handlePlayerNotInZone(player, iBoxSettingsApi);
+        } else {
+            handlePlayerInZone(player, iBoxSettingsApi);
+        }
+    }
+
+    private void handlePlayerNotInZone(Player player, IBoxSettingsApi iBoxSettingsApi) {
+        if (iBoxSettingsApi != null) {
+            iBoxSettingsApi.enableActionBar(player);
+        }
+
+        userdata.remove(player.getUniqueId());
+
+        List<User> users = Main.getInstance().getUserData().get(afkZone.getName());
+        Iterator<User> iterator = users.iterator();
+        while (iterator.hasNext()) {
+            User user = iterator.next();
+            if (user.getPlayer().getUniqueId().equals(player.getUniqueId())) {
+                user.destroy();
+                iterator.remove();
+                break;
+            }
+        }
+        Main.getInstance().getUserData().put(afkZone.getName(), users);
+    }
+
+    private void handlePlayerInZone(Player player, IBoxSettingsApi iBoxSettingsApi) {
+        if (userdata.get(player.getUniqueId()) == null) {
+            addUserToZone(player, iBoxSettingsApi);
+        } else {
+            updateUserInZone(player);
+        }
+    }
+
+    private void addUserToZone(Player player, IBoxSettingsApi iBoxSettingsApi) {
+        if (iBoxSettingsApi != null) {
+            iBoxSettingsApi.disableActionBar(player);
+        }
+
+        List<User> users = Main.getInstance().getUserData().get(afkZone.getName());
+        users.add(new User(player, afkZone));
+        userdata.put(player.getUniqueId(), System.currentTimeMillis() + (afkZone.getSecond() * 1000));
+    }
+
+    private void updateUserInZone(Player player) {
+        String value = getValue(userdata.get(player.getUniqueId()));
+        value = value.replace(",", ".");
+        double pr = Double.parseDouble(value);
+        double valueTemp =  pr * 100;
+        String procenty = String.format("%.2f", valueTemp);
+
+        CmdRewards reward = afkZone.getReward();
+        double chance = calculateChance(player, reward);
+
+        updateBossBar(player, pr, procenty, chance);
+
+        if(afkZone.isTitle())
+            player.sendTitle(ColorFixer.addColors(Main.getInstance().getConfig().getString("lang.title").replace("{value}", procenty)), ColorFixer.addColors(Main.getInstance().getConfig().getString("lang.sub-title").replace("{value}", procenty)), 10, 22, 10);
+
+        if(afkZone.isActionBar())
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(
+                    ColorFixer.addColors(Main.getInstance().getConfig().getString("lang.format")
+                            .replace("{time}", getTime(userdata.get(player.getUniqueId())))
+                            .replace("{bar}", getBar(value)
+                            ))));
+
+        if(userdata.get(player.getUniqueId()) <= System.currentTimeMillis()) {
+            handleRewards(player, reward, chance);
+        }
+    }
+
+    private double calculateChance(Player player, CmdRewards reward) {
+        double chance = 0;
+        for (Map.Entry<String, Double> entry : reward.getChance().entrySet()) {
+            String permission = entry.getKey();
+            Double chanceTemp = entry.getValue();
+            if (player.hasPermission(permission)) {
+                if (chanceTemp > chance)
+                    chance = chanceTemp;
+            }
+        }
+        return chance;
+    }
+
+    private void updateBossBar(Player player, double pr, String procenty, double chance) {
+        if(afkZone.isBossBar()) {
+            List<User> users = Main.getInstance().getUserData().get(afkZone.getName());
+            for (User user : users) {
+                if (!user.getPlayer().getUniqueId().equals(player.getUniqueId()))
+                    continue;
+
+                user.getBossBar().setProgress((pr > 1) ? 1 : pr);
+                String text = afkZone.getBossName();
+                int second = (int) (user.getFinishSecond() - System.currentTimeMillis()) / 1000;
+                user.getBossBar().setTitle(ColorFixer.addColors(
+                        text.replace("{time}", Timer.getTime(getSecond(userdata.get(player.getUniqueId()))))
+                                .replace("{percent}", procenty)
+                                .replace("{chance}", String.format("%.2f", chance))
+                ));
+            }
+        }
+    }
+
+    private void handleRewards(Player player, CmdRewards reward, double chance) {
+        AfkRewardsDone afkRewardsDone = new AfkRewardsDone(player);
+        Bukkit.getPluginManager().callEvent(afkRewardsDone);
+        if (!afkRewardsDone.isCancelled()) {
+            if(isWinningTicket(chance)) {
+                for(String cmd : reward.getCmds())
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd.replace("{player}", player.getName()));
+            }
+            cleanupUserData(player);
+        }
+    }
+
+    private boolean isWinningTicket(double chance) {
+        Random random = new Random();
+        double min = 0;
+        double max = 100-chance;
+        double startWin = min + (max - min) * random.nextDouble();
+        double finishWin = startWin + chance;
+
+        double winTicket = random.nextDouble() * 100;
+
+        return winTicket >= startWin && finishWin >= winTicket;
+    }
+
+    private void cleanupUserData(Player player) {
+        List<User> users = Main.getInstance().getUserData().get(afkZone.getName());
+        users.forEach(user -> {
+            if(user.getPlayer().getUniqueId().equals(player.getUniqueId()))
+            {
+                user.clear(afkZone);
+            }
+        });
+        userdata.put(player.getUniqueId(), System.currentTimeMillis() + (afkZone.getSecond() * 1000));
     }
 
     private String getBar(String value) {
@@ -195,4 +224,12 @@ public class CheckRegion extends BukkitRunnable {
         String timer = formatter.format(p3) + ":" + formatter.format(p1);
         return timer;
     }
+    private int getSecond(Long time)
+    {
+        long sec = time - System.currentTimeMillis();
+        int seconds = (int) sec/1000;
+        int p1 = seconds % 60;
+        return p1;
+    }
+
 }
