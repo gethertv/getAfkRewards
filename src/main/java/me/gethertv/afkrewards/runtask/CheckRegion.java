@@ -81,7 +81,6 @@ public class CheckRegion extends BukkitRunnable {
     private void addUserToZone(Player player, IBoxSettingsApi iBoxSettingsApi) {
         if (iBoxSettingsApi != null) {
             iBoxSettingsApi.disableActionBar(player);
-            Bukkit.broadcastMessage("# x");
         }
 
         List<User> users = Main.getInstance().getUserData().get(afkZone.getName());
