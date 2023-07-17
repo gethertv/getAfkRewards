@@ -48,6 +48,9 @@ public class CheckRegion extends BukkitRunnable {
     }
 
     private void handlePlayerNotInZone(Player player, IBoxSettingsApi iBoxSettingsApi) {
+        if(!userdata.containsKey(player.getUniqueId()))
+            return;
+
         if (iBoxSettingsApi != null) {
             iBoxSettingsApi.enableActionBar(player);
         }
@@ -78,6 +81,7 @@ public class CheckRegion extends BukkitRunnable {
     private void addUserToZone(Player player, IBoxSettingsApi iBoxSettingsApi) {
         if (iBoxSettingsApi != null) {
             iBoxSettingsApi.disableActionBar(player);
+            Bukkit.broadcastMessage("# x");
         }
 
         List<User> users = Main.getInstance().getUserData().get(afkZone.getName());
@@ -134,9 +138,9 @@ public class CheckRegion extends BukkitRunnable {
 
                 user.getBossBar().setProgress((pr > 1) ? 1 : pr);
                 String text = afkZone.getBossName();
-                int second = (int) (user.getFinishSecond() - System.currentTimeMillis()) / 1000;
+                int second = (int) (userdata.get(player.getUniqueId()) - System.currentTimeMillis()) / 1000;
                 user.getBossBar().setTitle(ColorFixer.addColors(
-                        text.replace("{time}", Timer.getTime(getSecond(userdata.get(player.getUniqueId()))))
+                        text.replace("{time}", Timer.getTime(second))
                                 .replace("{percent}", procenty)
                                 .replace("{chance}", String.format("%.2f", chance))
                 ));
@@ -223,13 +227,6 @@ public class CheckRegion extends BukkitRunnable {
         p2 = p2 / 60;
         String timer = formatter.format(p3) + ":" + formatter.format(p1);
         return timer;
-    }
-    private int getSecond(Long time)
-    {
-        long sec = time - System.currentTimeMillis();
-        int seconds = (int) sec/1000;
-        int p1 = seconds % 60;
-        return p1;
     }
 
 }
