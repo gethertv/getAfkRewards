@@ -34,7 +34,6 @@ public final class Main extends JavaPlugin {
     private static Location second;
 
 
-    private static CheckRegion checkRegion;
     private HashMap<String, List<User>> userData = new HashMap<>();
     private IBoxSettingsApi iBoxSettingsApi;
 
@@ -135,7 +134,7 @@ public final class Main extends JavaPlugin {
 
             int time = getConfig().getInt("afk."+name+".time");
             Cuboid cuboid = new Cuboid(first, second);
-            checkRegion = new CheckRegion(
+            CheckRegion checkRegion = new CheckRegion(
                     new AfkZone(
                         name,
                         cuboid,
@@ -163,8 +162,8 @@ public final class Main extends JavaPlugin {
         return userData;
     }
 
-    public static CheckRegion getCheckRegion() {
-        return checkRegion;
+    public List<CheckRegion> getAfkZoneList() {
+        return afkZoneList;
     }
 
     public static Main getInstance() {
