@@ -119,7 +119,7 @@ public class CheckRegion extends BukkitRunnable {
         double chance = 0;
         for (Map.Entry<String, Double> entry : reward.getChance().entrySet()) {
             String permission = entry.getKey();
-            Double chanceTemp = entry.getValue();
+            double chanceTemp = entry.getValue();
             if (player.hasPermission(permission)) {
                 if (chanceTemp > chance)
                     chance = chanceTemp;
