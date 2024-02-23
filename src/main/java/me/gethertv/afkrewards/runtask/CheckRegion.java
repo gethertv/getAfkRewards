@@ -228,4 +228,7 @@ public class CheckRegion extends BukkitRunnable {
         return timer;
     }
 
+    public AfkZone getAfkZone() {
+        return afkZone;
+    }
 }

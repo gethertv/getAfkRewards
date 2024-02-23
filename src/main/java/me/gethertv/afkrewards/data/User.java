@@ -1,11 +1,8 @@
 package me.gethertv.afkrewards.data;
 
-import me.gethertv.afkrewards.Main;
 import me.gethertv.afkrewards.utils.ColorFixer;
 import me.gethertv.afkrewards.utils.Timer;
 import org.bukkit.Bukkit;
-import org.bukkit.boss.BarColor;
-import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 
